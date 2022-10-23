@@ -8,11 +8,15 @@
 # Crash log files
 crash.log
 
+# Ignore aws id file
+variable_aws_id.tf
+
 # Ignore any .tfvars files that are generated automatically for each Terraform run. Most
 # .tfvars files are managed as part of configuration and so should be included in
 # version control.
 #
 # example.tfvars
+.terraform.lock.hcl
 
 # Ignore override files as they are usually used to override resources locally and so
 # are not checked in
