@@ -1,10 +1,13 @@
 variable "use_case_s3" {
-  type    = list(any)
+  type    = list(string)
   default = ["analytics", "dashboard"]
 }
 
 variable "use_case_sns" {
-  type = list(any)
+  type = list(object({
+    lambda_func = string
+    sns_topic = string
+  }))
   default = [
     {
       lambda_func = "visualisation"

@@ -12,6 +12,43 @@ resource "aws_s3_bucket_acl" "raw_bucket" {
 }
 
 ##################################################
+################### SNS TOPIC ####################
+##################################################
+
+resource "aws_sns_topic" "dash-s3-event-topic" {
+  for_each = length(var.use_case_sns) == 0 ? toset([]) : toset(var.use_case_sns.*.sns_topic)
+  
+  name = each.value
+  policy = <<POLICY
+{
+  "tag":"2012-10-17",
+  "Statement":[{
+      "Effect": "Allow",
+      "Principal": {"Service":"s3.amazonaws.com"},
+      "Action": "SNS:Publish",
+      "Resource":  "arn:aws:sns:*:*:${each.value}",
+      "Condition":{
+          "ArnEquals":{"aws:SourceArn":"arn:aws:s3:::${var.bucket_name}"}
+      }
+  }]
+}
+POLICY
+}
+
+resource "aws_sns_topic_subscription" "dash-s3-event-to-lambda" {
+  for_each = {for idx, uc in var.use_case_sns: uc.lambda_func => uc}
+
+  topic_arn = "arn:aws:sns:eu-west-3:${var.aws_id}:${each.value.sns_topic}"
+  protocol  = "lambda"
+  endpoint  = "arn:aws:lambda:eu-west-3:${var.aws_id}:function:${each.value.lambda_func}"
+
+  depends_on = [
+    aws_sns_topic.dash-s3-event-topic
+  ]
+}
+
+
+##################################################
 ############### Raw Data Triggers ################
 ##################################################
 
@@ -22,7 +59,7 @@ resource "aws_s3_bucket_notification" "s3_bucket_notification" {
     for_each = toset(var.use_case_s3)
 
     content {
-      lambda_function_arn = "arn:aws:lambda:eu-west-3:${aws_id}:function:${lambda_function.value}"
+      lambda_function_arn = "arn:aws:lambda:eu-west-3:${var.aws_id}:function:${lambda_function.value}"
       events              = ["s3:ObjectCreated:*"]
       filter_suffix       = "${lambda_function.value}.csv"
     }
@@ -34,7 +71,7 @@ resource "aws_s3_bucket_notification" "s3_bucket_notification" {
     for_each = length(var.use_case_sns) == 0 ? toset([]) : toset(var.use_case_sns.*.sns_topic)
 
     content {
-      topic_arn           = "arn:aws:sns:eu-west-3:${aws_id}:dash-s3-${topic.value}-event-topic"
+      topic_arn           = "arn:aws:sns:eu-west-3:${var.aws_id}:dash-s3-${topic.value}-event-topic"
       events              = ["s3:ObjectCreated:*"]
       filter_suffix       = "${topic.value}.json"
     }

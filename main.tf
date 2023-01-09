@@ -47,30 +47,6 @@ module "lambda_sns" {
 
 }
 
-##################################################
-################### SNS TOPIC ####################
-##################################################
-
-resource "aws_sns_topic" "dash-s3-event-topic" {
-  for_each = { for idx, uc in var.use_case_sns : uc.lambda_func => uc }
-
-  name = "dash-s3-${each.value.sns_topic}-event-topic"
-
-  policy = <<POLICY
-  {
-      "Version":"2012-10-17",
-      "Statement":[{
-          "Effect": "Allow",
-          "Principal": {"Service":"s3.amazonaws.com"},
-          "Action": "SNS:Publish",
-          "Resource":  "arn:aws:sns:*:*:dash-s3-${each.value.sns_topic}-event-topic",
-          "Condition":{
-              "ArnEquals":{"aws:SourceArn":"arn:aws:s3:::mb-analytics"}
-          }
-      }]
-  }
-  POLICY
-}
 
 ##################################################
 ############### S3 BUCKET + NOTIF ################
@@ -79,6 +55,7 @@ resource "aws_sns_topic" "dash-s3-event-topic" {
 module "raw_bucket" {
   source       = "./modules/s3"
   bucket_name  = "mb-analytics"
-  # use_case_s3  = var.use_case_s3
-  use_case_sns = var.use_case_sns
+  use_case_s3  = var.use_case_s3
+  # use_case_sns = var.use_case_sns
+  aws_id = var.aws_id
 }

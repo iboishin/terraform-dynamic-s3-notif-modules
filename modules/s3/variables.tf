@@ -1,5 +1,6 @@
 variable "aws_id" {
   type        = string
+  description = "AWS account id"
 }
 
 variable "bucket_name" {
