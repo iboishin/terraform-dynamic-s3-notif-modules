@@ -20,8 +20,8 @@ resource "aws_lambda_function" "lambda_dash" {
   filename      = var.lambda-zip-path
   handler       = "lambda_function.lambda_handler"
   layers        = [ "arn:aws:lambda:eu-west-3:336392948345:layer:AWSDataWrangler-Python39:3" ]
-  memory_size   = 256
-  timeout       = 30
+  memory_size   = var.memory_size
+  timeout       = var.timeout
 
   source_code_hash = data.archive_file.lambda_code_zip.output_base64sha256
 

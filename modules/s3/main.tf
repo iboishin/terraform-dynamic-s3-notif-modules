@@ -19,20 +19,22 @@ resource "aws_sns_topic" "dash-s3-event-topic" {
   for_each = length(var.use_case_sns) == 0 ? toset([]) : toset(var.use_case_sns.*.sns_topic)
   
   name = each.value
-  policy = <<POLICY
-{
-  "tag":"2012-10-17",
-  "Statement":[{
-      "Effect": "Allow",
-      "Principal": {"Service":"s3.amazonaws.com"},
-      "Action": "SNS:Publish",
-      "Resource":  "arn:aws:sns:*:*:${each.value}",
-      "Condition":{
-          "ArnEquals":{"aws:SourceArn":"arn:aws:s3:::${var.bucket_name}"}
+  policy = jsonencode(
+  {
+    "Version":"2012-10-17",
+    "Statement":[
+      {
+        "Effect": "Allow",
+        "Principal": {"Service":"s3.amazonaws.com"},
+        "Action": "SNS:Publish",
+        "Resource":  "arn:aws:sns:*:*:${each.value}",
+        "Condition":{
+            "ArnEquals":{"aws:SourceArn":"arn:aws:s3:::${var.bucket_name}"}
+        }
       }
-  }]
-}
-POLICY
+    ]
+  }
+  )
 }
 
 resource "aws_sns_topic_subscription" "dash-s3-event-to-lambda" {
@@ -67,23 +69,22 @@ resource "aws_s3_bucket_notification" "s3_bucket_notification" {
   }
 
   dynamic "topic" {
-    ## creating an if-else because empty string does not have sns_topic attribute
     for_each = length(var.use_case_sns) == 0 ? toset([]) : toset(var.use_case_sns.*.sns_topic)
 
     content {
-      topic_arn           = "arn:aws:sns:eu-west-3:${var.aws_id}:dash-s3-${topic.value}-event-topic"
+      topic_arn           = "arn:aws:sns:eu-west-3:${var.aws_id}:${topic.value}"
       events              = ["s3:ObjectCreated:*"]
-      filter_suffix       = "${topic.value}.json"
+      filter_suffix       = "${topic.value}.csv"
     }
   }
 
   depends_on = [
     aws_lambda_permission.allow_invocation_from_s3,
-    aws_lambda_permission.allow_invocation_from_sns
+    aws_lambda_permission.allow_invocation_from_sns,
+    aws_sns_topic.dash-s3-event-topic
   ]
 
 }
-
 
 
 # Permissions for lambda triggers
@@ -106,5 +107,5 @@ resource "aws_lambda_permission" "allow_invocation_from_sns" {
   action        = "lambda:InvokeFunction"
   function_name = "${each.value.lambda_func}"
   principal     = "sns.amazonaws.com"
-  source_arn    = "arn:aws:sns:::dash-s3-${each.value.sns_topic}-event-topic"
+  source_arn    = "arn:aws:sns:::${each.value.sns_topic}"
 }

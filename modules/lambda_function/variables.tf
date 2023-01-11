@@ -21,3 +21,13 @@ variable "lambda-zip-path" {
   type        = string
   description = "Location of zip file for lambda function"
 }
+
+variable "memory_size" {
+  type    = number
+  default = 256
+}
+
+variable "timeout" {
+  type    = number
+  default = 30
+}
