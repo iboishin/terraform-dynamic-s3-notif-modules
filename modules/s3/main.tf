@@ -16,7 +16,7 @@ resource "aws_s3_bucket_acl" "raw_bucket" {
 ##################################################
 
 resource "aws_sns_topic" "dash-s3-event-topic" {
-  for_each = length(var.use_case_sns) == 0 ? toset([]) : toset(var.use_case_sns.*.sns_topic)
+  for_each = toset(var.use_case_sns.*.sns_topic)
   
   name = each.value
   policy = jsonencode(
@@ -69,7 +69,7 @@ resource "aws_s3_bucket_notification" "s3_bucket_notification" {
   }
 
   dynamic "topic" {
-    for_each = length(var.use_case_sns) == 0 ? toset([]) : toset(var.use_case_sns.*.sns_topic)
+    for_each = toset(var.use_case_sns.*.sns_topic)
 
     content {
       topic_arn           = "arn:aws:sns:eu-west-3:${var.aws_id}:${topic.value}"
