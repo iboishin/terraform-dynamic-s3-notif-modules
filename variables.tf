@@ -1,6 +1,6 @@
 variable "use_case_s3" {
   type    = list(string)
-  default = ["analytics", "dashboard"]
+  default = ["seo", "sea"]
 }
 
 variable "use_case_sns" {
@@ -10,12 +10,8 @@ variable "use_case_sns" {
   }))
   default = [
     {
-      lambda_func = "visualisation"
-      sns_topic   = "visualisation"
-    },
-    {
-      lambda_func = "picture"
-      sns_topic   = "visualisation"
+      lambda_func = "website"
+      sns_topic   = "website"
     }
   ]
 }
